@@ -4,10 +4,10 @@ import { Element } from '../components/Element';
 import { Navbar } from '../components/Navbar';
 import styles from '../styles/Home.module.css';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function Home() {
-  const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY;
+  const [razorpayKey, setRazorpayKey] = useState('');
 
   const [form, setForm] = useState({
     amount: '499',
@@ -21,12 +21,33 @@ export default function Home() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  useEffect(() => {
+    const loadRazorpayKey = async () => {
+      const response = await fetch('/api/razorpay-config').then((result) =>
+        result.json()
+      );
+
+      if (response.keyId) {
+        setRazorpayKey(response.keyId);
+      }
+    };
+
+    loadRazorpayKey();
+  }, []);
+
   const makePayment = async (e, manualOrderId = null) => {
     e.preventDefault();
 
-    if (!razorpayKey) {
+    const activeKey =
+      razorpayKey ||
+      (await fetch('/api/razorpay-config')
+        .then((result) => result.json())
+        .then((response) => response.keyId)
+        .catch(() => ''));
+
+    if (!activeKey) {
       alert(
-        'Missing NEXT_PUBLIC_RAZORPAY_KEY. Set it in Vercel, then redeploy this site.'
+        'Missing Razorpay key id. Set RAZORPAY_KEY_ID (or RAZORPAY_KEY) and RAZORPAY_SECRET in Vercel, then redeploy.'
       );
       return;
     }
@@ -64,7 +85,7 @@ export default function Home() {
     console.log('Payment Data:', data);
 
     var options = {
-      key: razorpayKey,
+      key: activeKey,
       name: 'Razorpay Test Mediator',
       currency: data.currency,
       amount: data.amount,

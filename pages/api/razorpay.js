@@ -1,17 +1,33 @@
-const Razorpay = require("razorpay");
-const shortid = require("shortid");
+const Razorpay = require('razorpay');
+const shortid = require('shortid');
+
+function getRazorpayKeyId() {
+  return (
+    process.env.RAZORPAY_KEY_ID ||
+    process.env.RAZORPAY_KEY ||
+    process.env.NEXT_PUBLIC_RAZORPAY_KEY ||
+    ''
+  );
+}
 
 export default async function handler(req, res) {
-  if (req.method === "POST") {
+  if (req.method === 'POST') {
     // Initialize razorpay object
     const razorpay = new Razorpay({
-      key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY,
+      key_id: getRazorpayKeyId(),
       key_secret: process.env.RAZORPAY_SECRET,
     });
 
+    if (!getRazorpayKeyId() || !process.env.RAZORPAY_SECRET) {
+      return res.status(500).json({
+        error:
+          'Missing Razorpay env vars. Set RAZORPAY_KEY_ID and RAZORPAY_SECRET in Vercel.',
+      });
+    }
+
     const payment_capture = 1;
     const amount = req.body.amount || 499;
-    const currency = req.body.currency || "INR";
+    const currency = req.body.currency || 'INR';
     const options = {
       amount: (amount * 100).toString(),
       currency,
