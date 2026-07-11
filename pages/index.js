@@ -7,6 +7,8 @@ import styles from '../styles/Home.module.css';
 import { useState } from 'react';
 
 export default function Home() {
+  const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY;
+
   const [form, setForm] = useState({
     amount: '499',
     orderId: '',
@@ -21,6 +23,14 @@ export default function Home() {
 
   const makePayment = async (e, manualOrderId = null) => {
     e.preventDefault();
+
+    if (!razorpayKey) {
+      alert(
+        'Missing NEXT_PUBLIC_RAZORPAY_KEY. Set it in Vercel, then redeploy this site.'
+      );
+      return;
+    }
+
     const res = await initializeRazorpay();
 
     if (!res) {
@@ -54,7 +64,7 @@ export default function Home() {
     console.log('Payment Data:', data);
 
     var options = {
-      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY,
+      key: razorpayKey,
       name: 'Razorpay Test Mediator',
       currency: data.currency,
       amount: data.amount,
