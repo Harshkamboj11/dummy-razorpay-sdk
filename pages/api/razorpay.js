@@ -41,6 +41,7 @@ export default async function handler(req, res) {
         id: response.id,
         currency: response.currency,
         amount: response.amount,
+        keyId: getRazorpayKeyId(),
       });
     } catch (err) {
       console.log(err);

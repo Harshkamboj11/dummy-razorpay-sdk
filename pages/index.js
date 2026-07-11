@@ -38,20 +38,6 @@ export default function Home() {
   const makePayment = async (e, manualOrderId = null) => {
     e.preventDefault();
 
-    const activeKey =
-      razorpayKey ||
-      (await fetch('/api/razorpay-config')
-        .then((result) => result.json())
-        .then((response) => response.keyId)
-        .catch(() => ''));
-
-    if (!activeKey) {
-      alert(
-        'Missing Razorpay key id. Set RAZORPAY_KEY_ID (or RAZORPAY_KEY) and RAZORPAY_SECRET in Vercel, then redeploy.'
-      );
-      return;
-    }
-
     const res = await initializeRazorpay();
 
     if (!res) {
@@ -82,6 +68,15 @@ export default function Home() {
       }
     }
 
+    const activeKey = data.keyId || razorpayKey;
+
+    if (!activeKey) {
+      alert(
+        'Missing Razorpay key id. Set RAZORPAY_KEY_ID (or RAZORPAY_KEY) and RAZORPAY_SECRET in Vercel, then redeploy.'
+      );
+      return;
+    }
+
     console.log('Payment Data:', data);
 
     var options = {
@@ -98,6 +93,15 @@ export default function Home() {
         );
         console.log(response);
       },
+      modal: {
+        ondismiss: function () {
+          console.log('Razorpay checkout dismissed');
+        },
+      },
+      callback_url: undefined,
+      retry: {
+        enabled: false,
+      },
       prefill: {
         name: form.name,
         email: form.email,
@@ -109,6 +113,13 @@ export default function Home() {
     };
 
     const paymentObject = new window.Razorpay(options);
+    paymentObject.on('payment.failed', function (response) {
+      console.error('Razorpay payment failed:', response.error);
+      alert(
+        response?.error?.description ||
+          'Razorpay payment failed. Check the browser console and Vercel env values.'
+      );
+    });
     paymentObject.open();
   };
 
